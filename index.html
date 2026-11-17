@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora de Puts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#06152C; --navy-2:#0A1D3A; --navy-3:#11294D; --line:#1E3A63;
+    --gold:#C8A84B; --gold-2:#E2C97E; --ink:#FFFFFF; --muted:#8FA3C0;
+    --good:#5FC59A; --bad:#E58A7B; --warn:#E2C97E;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--navy);color:var(--ink);font-family:'Poppins',system-ui,'Segoe UI',sans-serif;font-size:14px}
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+  header{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
+  h1{margin:0;font-size:22px;font-weight:600;letter-spacing:.2px}
+  h1 span{color:var(--gold)}
+  .sub{color:var(--muted);font-size:12px;margin-top:4px}
+  .acoes{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+  label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+  input{width:100%;background:var(--navy);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 10px;font:inherit}
+  input:focus{outline:none;border-color:var(--gold)}
+  .btn{background:var(--gold);color:var(--navy);border:0;border-radius:8px;padding:9px 16px;font:inherit;font-weight:600;cursor:pointer;white-space:nowrap}
+  .btn:hover{background:var(--gold-2)}
+  .btn.ghost{background:transparent;color:var(--gold);border:1px solid var(--gold)}
+  .btn.sm{padding:6px 10px;font-size:12px}
+  .btn.del{background:transparent;color:var(--bad);border:1px solid #5a2f2a}
+  .btn:disabled{opacity:.5;cursor:wait}
+
+  .resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:22px}
+  .tile{background:var(--navy-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .tile .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+  .tile .v{font-size:19px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums}
+  .tile.dest{border-color:var(--gold)}
+  .sec-tit{font-size:13px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:.6px;margin:0 0 10px}
+  .sec-tit span{color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0}
+
+  .op{background:var(--navy-2);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+  .op-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+  .op-tit{font-weight:600;font-size:15px}
+  .badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;margin-left:8px;vertical-align:middle}
+  .b-OTM{background:#163d2e;color:var(--good)} .b-ITM{background:#4a2420;color:var(--bad)} .b-ATM{background:#3d3418;color:var(--warn)}
+  .campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+  .spot-box{display:flex;gap:6px}
+  .spot-box input{flex:1;min-width:0}
+  .res{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;margin-top:14px}
+  .bloco{background:var(--navy-3);border-radius:10px;padding:10px 12px}
+  .bloco h3{margin:0 0 6px;font-size:12px;color:var(--gold);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+  .linha{display:flex;justify-content:space-between;gap:8px;padding:3px 0;font-size:13px}
+  .linha span:first-child{color:var(--muted)}
+  .linha span:last-child{font-variant-numeric:tabular-nums;font-weight:500;text-align:right}
+  .linha.big span:last-child{font-size:15px;font-weight:600}
+  .pos{color:var(--good)} .neg{color:var(--bad)}
+  details{margin-top:12px}
+  summary{cursor:pointer;color:var(--gold);font-size:12px;font-weight:500}
+  .vazio{text-align:center;color:var(--muted);padding:40px;border:1px dashed var(--line);border-radius:14px}
+  .nota{color:var(--muted);font-size:11px;margin-top:24px;line-height:1.6}
+  .status{font-size:11px;color:var(--muted);min-height:14px}
+  .print-only{display:none}
+
+  @media print{
+    :root{--navy:#fff;--navy-2:#fff;--navy-3:#f4f6fa;--line:#d6dce6;--ink:#0A1D3A;--muted:#5b6b82;--gold:#8a6d1d}
+    body{font-size:12px}
+    .no-print,.btn,summary{display:none!important}
+    .op:not(.com-rolagem) details{display:none!important}
+    input{border:0;padding:0;background:transparent;font-weight:600}
+    .op,.tile{break-inside:avoid}
+    .print-only{display:block}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Calculadora de <span>Venda de Put</span></h1>
+      <div class="sub">Notional necessário em caso de exercício e resultado de fechamento/rolagem</div>
+    </div>
+    <div class="acoes">
+      <div style="min-width:220px">
+        <label for="cliente">Cliente</label>
+        <input id="cliente" placeholder="Nome do cliente">
+      </div>
+      <button class="btn ghost no-print" id="btnLimpar" title="Apaga todas as operações salvas neste navegador">Limpar tudo</button>
+      <button class="btn ghost no-print" onclick="window.print()">Imprimir / PDF</button>
+      <button class="btn no-print" id="btnAdd">+ Nova operação</button>
+    </div>
+  </header>
+  <div class="status no-print" id="status"></div>
+
+  <section class="resumo" id="resumo"></section>
+  <div id="bloco-rol" style="display:none">
+    <h2 class="sec-tit">Consolidado das rolagens <span id="qtd-rol"></span></h2>
+    <section class="resumo" id="resumo-rol"></section>
+  </div>
+  <section id="lista"></section>
+
+  <p class="nota">
+    <b>Notional</b> = quantidade × strike (caixa necessário para comprar as ações se a put for exercida).
+    <b>Preço médio se exercido</b> = strike − prêmio recebido.
+    <b>Fechamento</b> = prêmio recebido − custo de recompra (prêmio atual).
+    <b>Exercício vs spot</b> = (spot − strike) × qtd + prêmio recebido, ou seja, o resultado de receber as ações no strike e marcá-las ao preço atual.
+    <b>Vencimento</b> = resultado se a opção vencesse hoje com o spot atual (exercida só se spot &lt; strike).
+    Valores brutos, sem corretagem, emolumentos ou IR. Material de simulação, não constitui recomendação.
+    <br><b>Privacidade:</b> as operações ficam salvas apenas neste navegador, neste aparelho. Nada é enviado a servidor algum
+    e ninguém mais tem acesso a elas. Limpar os dados do navegador ou usar uma aba anônima apaga as operações.
+  </p>
+</div>
+
+<template id="tpl-op">
+  <div class="op">
+    <div class="op-top">
+      <div class="op-tit"><span data-t="titulo">Nova operação</span><span class="badge" data-t="badge"></span></div>
+      <button class="btn sm del no-print" data-acao="remover">Remover</button>
+    </div>
+    <div class="campos">
+      <div><label>Ativo</label><input data-c="ativo" placeholder="PETR4" style="text-transform:uppercase"></div>
+      <div><label>Código opção</label><input data-c="codigo" placeholder="PETRX380" style="text-transform:uppercase"></div>
+      <div><label>Vencimento</label><input data-c="vencimento" type="date"></div>
+      <div><label>Qtd opções</label><input data-c="qtd" inputmode="numeric" placeholder="1000"></div>
+      <div><label>Strike</label><input data-c="strike" inputmode="decimal" placeholder="38,00"></div>
+      <div><label>Prêmio recebido</label><input data-c="premio_venda" inputmode="decimal" placeholder="0,85"></div>
+      <div><label>Spot (ação)</label>
+        <input data-c="spot" inputmode="decimal" placeholder="39,20"></div>
+      <div><label>Prêmio atual</label><input data-c="premio_atual" inputmode="decimal" placeholder="0,40"></div>
+    </div>
+
+    <div class="res">
+      <div class="bloco">
+        <h3>Exposição</h3>
+        <div class="linha big"><span>Notional (se exercido)</span><span data-r="notional"></span></div>
+        <div class="linha"><span>Prêmio recebido</span><span data-r="premio_total"></span></div>
+        <div class="linha"><span>Preço médio se exercido</span><span data-r="preco_medio"></span></div>
+        <div class="linha"><span>Retorno s/ notional</span><span data-r="retorno_notional_pct"></span></div>
+        <div class="linha"><span>Distância spot × strike</span><span data-r="distancia_strike_pct"></span></div>
+      </div>
+      <div class="bloco">
+        <h3>Fechamento (recompra)</h3>
+        <div class="linha"><span>Custo de recompra</span><span data-r="custo_recompra"></span></div>
+        <div class="linha big"><span>Resultado</span><span data-r="resultado_fechamento"></span></div>
+        <div class="linha"><span>% do prêmio capturado</span><span data-r="pct_premio_capturado"></span></div>
+      </div>
+      <div class="bloco">
+        <h3>Exercício (vs spot)</h3>
+        <div class="linha"><span>Valor de mercado das ações</span><span data-r="valor_mercado_acoes"></span></div>
+        <div class="linha big"><span>Resultado</span><span data-r="resultado_exercicio"></span></div>
+        <div class="linha"><span>% sobre notional</span><span data-r="pct_exercicio"></span></div>
+        <div class="linha"><span>Se vencesse hoje</span><span data-r="resultado_vencimento"></span></div>
+      </div>
+    </div>
+
+    <details data-t="rolagem-box">
+      <summary>Simular rolagem</summary>
+      <div class="campos" style="margin-top:10px">
+        <div><label>Novo código</label><input data-c="novo_codigo" placeholder="PETRY370" style="text-transform:uppercase"></div>
+        <div><label>Novo vencimento</label><input data-c="novo_vencimento" type="date"></div>
+        <div><label>Novo strike</label><input data-c="novo_strike" inputmode="decimal"></div>
+        <div><label>Novo prêmio</label><input data-c="novo_premio" inputmode="decimal"></div>
+      </div>
+      <div class="res" data-t="rolagem-res" style="display:none">
+        <div class="bloco">
+          <h3>Rolagem</h3>
+          <div class="linha big"><span>Crédito/débito líquido</span><span data-r="rolagem.credito_liquido"></span></div>
+          <div class="linha"><span>Novo notional</span><span data-r="rolagem.novo_notional"></span></div>
+          <div class="linha"><span>Variação de notional</span><span data-r="rolagem.variacao_notional"></span></div>
+          <div class="linha"><span>Prêmio acumulado</span><span data-r="rolagem.premio_acumulado"></span></div>
+          <div class="linha"><span>Novo preço médio se exercido</span><span data-r="rolagem.novo_preco_medio"></span></div>
+        </div>
+      </div>
+    </details>
+  </div>
+</template>
+
+<script>
+const NUM = new Set(["qtd","strike","premio_venda","spot","premio_atual","novo_strike","novo_premio"]);
+const PCT = new Set(["retorno_notional_pct","pct_premio_capturado","pct_exercicio","distancia_strike_pct"]);
+const PRECO = new Set(["preco_medio","rolagem.novo_preco_medio"]);
+const SINAL = new Set(["resultado_fechamento","resultado_exercicio","resultado_vencimento","pct_premio_capturado",
+  "pct_exercicio","rolagem.credito_liquido","rolagem.variacao_notional","distancia_strike_pct"]);
+// Para estes, número negativo é bom (ex.: notional caindo = menos caixa comprometido)
+const INVERTE = new Set(["rolagem.variacao_notional"]);
+
+const brl = new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
+const num2 = new Intl.NumberFormat("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+
+let estado = {cliente:"", operacoes:[]};
+let timer = null;
+
+const $ = s => document.querySelector(s);
+const lista = $("#lista");
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+
+function parseNum(v){
+  if (v === null || v === undefined) return "";
+  let s = String(v).trim().replace(/\s|R\$/g,"");
+  if (!s) return "";
+  if (s.includes(",")) s = s.replace(/\./g,"").replace(",",".");
+  const n = Number(s);
+  return isFinite(n) ? n : "";
+}
+function fmtCampo(c, v){
+  if (v === "" || v === null || v === undefined) return "";
+  if (!NUM.has(c)) return v;
+  return c === "qtd" ? String(v) : num2.format(v);
+}
+function fmtRes(chave, v){
+  if (v === null || v === undefined) return "—";
+  if (PCT.has(chave)) return (v>0 && SINAL.has(chave) ? "+" : "") + num2.format(v) + "%";
+  if (PRECO.has(chave)) return brl.format(v);
+  return brl.format(v);
+}
+function get(obj, caminho){ return caminho.split(".").reduce((o,k)=> o==null ? o : o[k], obj); }
+function status(msg){ $("#status").textContent = msg; }
+
+function cardDe(op){
+  const el = $("#tpl-op").content.firstElementChild.cloneNode(true);
+  el.dataset.id = op.id;
+  el.querySelectorAll("[data-c]").forEach(inp=>{
+    const c = inp.dataset.c;
+    inp.value = fmtCampo(c, op[c]);
+    inp.addEventListener("input", ()=>{
+      op[c] = NUM.has(c) ? parseNum(inp.value) : inp.value.trim().toUpperCase();
+      if (inp.type === "date") op[c] = inp.value;
+      titulo(el, op);
+      agendar();
+    });
+    if (NUM.has(c)) inp.addEventListener("blur", ()=>{ inp.value = fmtCampo(c, op[c]); });
+  });
+  el.querySelector('[data-acao="remover"]').onclick = ()=>{
+    const nome = op.codigo || op.ativo || "esta operação";
+    if (!confirm(`Remover ${nome}?`)) return;
+    estado.operacoes = estado.operacoes.filter(o=>o.id!==op.id);
+    el.remove(); vazio(); agendar(0);
+  };
+  if (op.novo_strike || op.novo_premio) el.querySelector("details").open = true;
+  titulo(el, op);
+  return el;
+}
+function titulo(el, op){
+  const partes = [op.ativo, op.codigo].filter(Boolean);
+  el.querySelector('[data-t="titulo"]').textContent = partes.length ? partes.join(" · ") : "Nova operação";
+}
+function vazio(){
+  if (!estado.operacoes.length)
+    lista.innerHTML = '<div class="vazio">Nenhuma operação. Clique em <b>+ Nova operação</b> para começar.</div>';
+  else lista.querySelector(".vazio")?.remove();
+}
+function renderTudo(){
+  lista.innerHTML = "";
+  estado.operacoes.forEach(op => lista.appendChild(cardDe(op)));
+  vazio();
+}
+
+function aplicarCalculo(calc){
+  calc.linhas.forEach(({id, resultado})=>{
+    const el = lista.querySelector(`.op[data-id="${id}"]`);
+    if (!el) return;
+    el.querySelectorAll("[data-r]").forEach(s=>{
+      const k = s.dataset.r, v = get(resultado, k);
+      s.textContent = fmtRes(k, v);
+      const sg = INVERTE.has(k) ? -v : v;
+      s.classList.toggle("pos", SINAL.has(k) && sg > 0);
+      s.classList.toggle("neg", SINAL.has(k) && sg < 0);
+    });
+    el.classList.toggle("com-rolagem", !!resultado.rolagem);
+    const b = el.querySelector('[data-t="badge"]');
+    b.textContent = resultado.moneyness === "—" ? "" : resultado.moneyness;
+    b.className = "badge b-" + resultado.moneyness;
+    el.querySelector('[data-t="rolagem-res"]').style.display = resultado.rolagem ? "" : "none";
+  });
+  const t = calc.totais;
+  const tiles = [
+    ["Notional total (se exercido)", brl.format(t.notional), "dest"],
+    ["Notional hoje ITM", brl.format(t.notional_em_risco), ""],
+    ["Prêmio recebido", brl.format(t.premio_total), ""],
+    ["Resultado fechando tudo", brl.format(t.resultado_fechamento), t.resultado_fechamento],
+    ["Resultado se exercido (vs spot)", brl.format(t.resultado_exercicio), t.resultado_exercicio],
+    ["Se vencesse hoje", brl.format(t.resultado_vencimento), t.resultado_vencimento],
+  ];
+  const tileHtml = ([k,v,x])=>{
+    const cls = x === "dest" ? " dest" : "";
+    const cor = typeof x === "number" ? (x>0?"pos":x<0?"neg":"") : "";
+    return `<div class="tile${cls}"><div class="k">${k}</div><div class="v ${cor}">${v}</div></div>`;
+  };
+  $("#resumo").innerHTML = tiles.map(tileHtml).join("");
+
+  const n = t.qtd_rolagens || 0;
+  $("#bloco-rol").style.display = n ? "" : "none";
+  if (n){
+    $("#qtd-rol").textContent = `(${n} ${n === 1 ? "operação" : "operações"})`;
+    $("#resumo-rol").innerHTML = [
+      ["Crédito/débito líquido p/ rolar", brl.format(t.rol_credito_liquido), t.rol_credito_liquido],
+      ["Prêmio acumulado (antigas + novas)", brl.format(t.rol_premio_acumulado), t.rol_premio_acumulado],
+      ["Variação de notional", brl.format(t.rol_variacao_notional), -t.rol_variacao_notional],
+      ["Notional da carteira após rolagens", brl.format(t.notional_apos_rolagens), "dest"],
+    ].map(tileHtml).join("");
+  }
+}
+
+// PDF: abre a seção de rolagem das operações que têm rolagem, senão o navegador não imprime o conteúdo
+let abertosAntes = [];
+window.addEventListener("beforeprint", ()=>{
+  abertosAntes = [...lista.querySelectorAll("details")].map(d => [d, d.open]);
+  lista.querySelectorAll(".op.com-rolagem details").forEach(d => d.open = true);
+});
+window.addEventListener("afterprint", ()=>{
+  abertosAntes.forEach(([d, aberto]) => d.open = aberto);
+});
+
+/* ===== Cálculos (mesmas fórmulas de calculos.py) ===== */
+function f(v){ const n = Number(v); return (v === "" || v == null || !isFinite(n)) ? 0 : n; }
+
+function calcularOperacao(op){
+  const qtd = f(op.qtd), strike = f(op.strike), premioVenda = f(op.premio_venda),
+        spot = f(op.spot), premioAtual = f(op.premio_atual),
+        novoStrike = f(op.novo_strike), novoPremio = f(op.novo_premio);
+
+  const premio_total = qtd * premioVenda;
+  const notional = qtd * strike;
+  const preco_medio = strike - premioVenda;
+
+  const custo_recompra = qtd * premioAtual;
+  const resultado_fechamento = premio_total - custo_recompra;
+  const pct_premio_capturado = premio_total ? resultado_fechamento / premio_total * 100 : 0;
+
+  const exercida = spot > 0 && spot < strike;
+  let valor_mercado_acoes = qtd * spot;
+  let resultado_exercicio = qtd * (spot - strike) + premio_total;
+  let pct_exercicio = notional ? resultado_exercicio / notional * 100 : 0;
+  let resultado_vencimento = premio_total - qtd * Math.max(strike - spot, 0);
+  if (spot <= 0) valor_mercado_acoes = resultado_exercicio = pct_exercicio = resultado_vencimento = null;
+
+  const distancia_strike_pct = (strike && spot) ? (spot / strike - 1) * 100 : 0;
+  let moneyness = "—";
+  if (spot && strike) moneyness = Math.abs(spot - strike) / strike < 0.01 ? "ATM" : (spot > strike ? "OTM" : "ITM");
+
+  const retorno_notional_pct = strike ? premioVenda / strike * 100 : 0;
+
+  let rolagem = null;
+  if (novoStrike > 0 && novoPremio > 0){
+    const novo_notional = qtd * novoStrike;
+    const premio_acumulado = resultado_fechamento + qtd * novoPremio;
+    rolagem = {
+      credito_liquido: qtd * (novoPremio - premioAtual),
+      novo_notional,
+      variacao_notional: novo_notional - notional,
+      premio_acumulado,
+      novo_preco_medio: novoStrike - (qtd ? premio_acumulado / qtd : 0),
+    };
+  }
+  return {premio_total, notional, preco_medio, breakeven: preco_medio, retorno_notional_pct,
+    custo_recompra, resultado_fechamento, pct_premio_capturado, exercida, valor_mercado_acoes,
+    resultado_exercicio, pct_exercicio, resultado_vencimento, distancia_strike_pct, moneyness, rolagem};
+}
+
+function calcularCarteira(operacoes){
+  const totais = {notional:0, premio_total:0, custo_recompra:0, resultado_fechamento:0,
+    resultado_exercicio:0, resultado_vencimento:0, notional_em_risco:0,
+    qtd_rolagens:0, rol_credito_liquido:0, rol_premio_acumulado:0, rol_variacao_notional:0, notional_apos_rolagens:0};
+  const linhas = operacoes.map(op=>{
+    const r = calcularOperacao(op);
+    for (const k of ["notional","premio_total","custo_recompra","resultado_fechamento","resultado_exercicio","resultado_vencimento"])
+      totais[k] += r[k] || 0;
+    if (r.exercida) totais.notional_em_risco += r.notional;
+    if (r.rolagem){
+      totais.qtd_rolagens += 1;
+      totais.rol_credito_liquido += r.rolagem.credito_liquido;
+      totais.rol_premio_acumulado += r.rolagem.premio_acumulado;
+      totais.rol_variacao_notional += r.rolagem.variacao_notional;
+      totais.notional_apos_rolagens += r.rolagem.novo_notional;
+    } else totais.notional_apos_rolagens += r.notional;
+    return {id: op.id, resultado: r};
+  });
+  return {linhas, totais};
+}
+
+/* ===== Armazenamento: só no navegador do próprio cliente ===== */
+const CHAVE = "calculadora-puts:v1";
+function carregar(){
+  try{
+    const j = JSON.parse(localStorage.getItem(CHAVE) || "null");
+    if (j && Array.isArray(j.operacoes)) return {cliente: j.cliente || "", operacoes: j.operacoes};
+  }catch(e){}
+  return {cliente:"", operacoes:[]};
+}
+
+function agendar(ms=250){
+  clearTimeout(timer);
+  timer = setTimeout(salvar, ms);
+}
+function salvar(){
+  aplicarCalculo(calcularCarteira(estado.operacoes));
+  try{
+    localStorage.setItem(CHAVE, JSON.stringify(estado));
+    status("Salvo neste navegador às " + new Date().toLocaleTimeString("pt-BR"));
+  }catch(e){
+    status("Não foi possível salvar neste navegador (aba anônima?). Os cálculos funcionam, mas somem ao fechar a página.");
+  }
+}
+
+$("#btnAdd").onclick = ()=>{
+  const op = {id: uid(), ativo:"", codigo:"", vencimento:"", qtd:"", strike:"", premio_venda:"", spot:"", premio_atual:""};
+  estado.operacoes.push(op);
+  vazio();
+  const el = cardDe(op);
+  lista.appendChild(el);
+  el.querySelector('[data-c="ativo"]').focus();
+  agendar(0);
+};
+$("#btnLimpar").onclick = ()=>{
+  if (!estado.operacoes.length && !estado.cliente) return;
+  if (!confirm("Apagar todas as operações salvas neste navegador? Não dá para desfazer.")) return;
+  estado = {cliente:"", operacoes:[]};
+  $("#cliente").value = "";
+  renderTudo(); agendar(0);
+};
+$("#cliente").addEventListener("input", e=>{ estado.cliente = e.target.value; agendar(); });
+
+(function init(){
+  estado = carregar();
+  $("#cliente").value = estado.cliente;
+  renderTudo();
+  aplicarCalculo(calcularCarteira(estado.operacoes));
+})();
+</script>
+</body>
+</html>
